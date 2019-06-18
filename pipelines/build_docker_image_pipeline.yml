@@ -1,0 +1,71 @@
+---
+
+# fly -t tutorial sp -c build_docker_image_pipeline.yml -p build-docker-image-pipeline
+
+resources:
+  - name: resource-sinatra-api-example-1
+    type: git
+    source: 
+      uri: "https://github.com/julweber/sinatra_api_example_1"
+      branch: master
+
+jobs:
+  - name: job-view-git-log
+    public: true
+    plan:
+      - get: resource-sinatra-api-example-1
+        trigger: true
+      - task: task-view-git-log
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source: 
+              repository: bwits/docker-git-alpine
+          inputs: 
+            - name: resource-sinatra-api-example-1
+              path: src
+          run:
+            path: /bin/sh
+            args:
+            - -c
+            - |
+              export SOURCE_DIR="src"
+              echo "Source Dir: $SOURCE_DIR"
+              cd $SOURCE_DIR
+              git log -2 HEAD --graph
+ 
+  - name: job-view-files
+    public: true
+    plan:
+      - get: resource-sinatra-api-example-1
+        trigger: true
+      - task: task-view-files
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: busybox
+          inputs: 
+            - name: resource-sinatra-api-example-1
+              path: src
+          run:
+            path: /bin/sh
+            args:
+            - -c
+            - |
+              echo "Linux Version:"
+              uname -a
+              echo "----------"
+              export SOURCE_DIR="src"
+              echo "Source Dir: $SOURCE_DIR"
+              
+              echo "----------"
+              cd $SOURCE_DIR
+              echo "Files within the source dir:"
+              ls -lacht 
+              
+              echo "----------"
+              echo "Full Path in container:"
+              pwd
